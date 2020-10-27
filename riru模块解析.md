@@ -1,7 +1,7 @@
 因为最近在用EdXposed，对于magisk和riru很是好奇，之前也大致了解过edxp通过riru实现zygote注入进而完成ART Hook实现类Xposed，但是在准备看源码的时候发现不知道入口在哪，本来想找找有没有现成的大佬总结，发现貌似没有，于是秉着努力学习拉近差距的态度，自力更生，从magisk插件开发到riru插件到riru加载逻辑，一步步找到了edxp的代码入口。
 
 # Edxp如何编译成一个Magisk插件
-根据面具的官方文档(https://topjohnwu.github.io/Magisk/guides.html)一个Magisk插件模块是/data/adb/modules下的一个文件夹，其中至少包含着以下几个文件：
+根据面具的[官方文档](https://topjohnwu.github.io/Magisk/guides.html)一个Magisk插件模块是/data/adb/modules下的一个文件夹，其中至少包含着以下几个文件：
 
 - module.prop 模块标识
 - post-fs-data.sh post-fs-data时所执行的脚本
