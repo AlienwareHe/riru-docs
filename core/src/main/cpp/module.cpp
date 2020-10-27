@@ -63,12 +63,15 @@ void load_modules() {
 
     if (!(dir = _opendir(MODULES_DIR))) return;
 
+    // 遍历/data/adb/riru/modules目录下的文件夹
     while ((entry = _readdir(dir))) {
         if (entry->d_type != DT_DIR) continue;
 
+        // 获取文件夹名称
         auto name = entry->d_name;
         if (name[0] == '.') continue;
 
+        // 根据文件夹名称拼接so路径：/system/lib/libriru_%s.so，这一步操作也是在riru插件的customize.sh中完成
         snprintf(path, PATH_MAX, MODULE_PATH_FMT, name);
 
         if (access(path, F_OK) != 0) {
@@ -82,6 +85,8 @@ void load_modules() {
             continue;
         }
 
+        // 找到so的init方法，这里也是为什么riru的官方文档中指出必须要有一个导出的init函数
+        // 如果没有init方法，则将不会被认为是一个合法的riru module，后续get_modules也无法获取到
         auto init = (RiruInit_t *) dlsym(handle, "init");
         if (!init) {
             LOGW("%s does not export init", path);
@@ -121,6 +126,7 @@ void load_modules() {
         // 3. let the module to do some cleanup jobs
         init(nullptr);
 
+        // 缓存插件信息到一个vector中
         get_modules()->push_back(module);
 
         LOGI("module loaded: %s (api %d)", module->name, module->apiVersion);
@@ -152,7 +158,7 @@ void load_modules() {
     for (auto module : *get_modules()) {
         if (module->hasOnModuleLoaded()) {
             LOGV("%s: onModuleLoaded", module->name);
-
+            // 回调module的_onModuleLoaded方法
             module->onModuleLoaded();
         }
     }

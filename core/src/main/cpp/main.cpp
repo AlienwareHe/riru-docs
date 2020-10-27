@@ -27,7 +27,7 @@ static JNINativeMethod *onRegisterZygote(
 
         if (strcmp(method.name, "nativeForkAndSpecialize") == 0) {
             JNI::Zygote::nativeForkAndSpecialize = new JNINativeMethod{method.name, method.signature, method.fnPtr};
-
+            // 不同安卓版本之间的兼容
             if (strcmp(nativeForkAndSpecialize_r_sig, method.signature) == 0)
                 newMethods[i].fnPtr = (void *) nativeForkAndSpecialize_r;
             else if (strcmp(nativeForkAndSpecialize_p_sig, method.signature) == 0)
@@ -160,10 +160,13 @@ NEW_FUNC_DEF(int, jniRegisterNativeMethods, JNIEnv *env, const char *className,
 
     JNINativeMethod *newMethods = nullptr;
     if (strcmp("com/android/internal/os/Zygote", className) == 0) {
+        // com/android/internal/os/Zygote注册时回调onRegisterZygote方法获取新的jniMethods列表进行替换
         newMethods = onRegisterZygote(env, className, methods, numMethods);
     } else if (strcmp("android/os/SystemProperties", className) == 0) {
         // hook android.os.SystemProperties#native_set to prevent a critical problem on Android 9
         // see comment of SystemProperties_set in jni_native_method.cpp for detail
+        // 作者提到：安卓9之后，SystemProperties.set("sys.user." + userId + ".ce_available", "true")可能会小概率出现异常，虽然不确定是否riru导致
+        // 回调onRegisterSystemProperties方法
         newMethods = onRegisterSystemProperties(env, className, methods, numMethods);
     }
 
@@ -212,6 +215,7 @@ static void read_prop() {
 
 extern "C" void constructor() __attribute__((constructor));
 
+// _init_array libriru.so被dlopen后最先执行的函数
 void constructor() {
 #ifdef DEBUG_APP
     hide::hide_modules(nullptr, 0);
@@ -243,6 +247,8 @@ void constructor() {
 
     read_prop();
 
+    // hook libandroid_runtime.so中jniRegisterNativeMethods方法，因为libandroid_runtime.so中所有JNI方法都是通过该方法进行注册
+    // 因此通过hook该方法可以在com.android.internal.os.Zygote#nativeForkAndSpecialize和com.android.internal.os.Zygote#nativeForkSystemServer注册时进行替换
     XHOOK_REGISTER(".*\\libandroid_runtime.so$", jniRegisterNativeMethods);
 
     if (xhook_refresh(0) == 0) {
@@ -252,6 +258,7 @@ void constructor() {
         LOGE("failed to refresh hook");
     }
 
+    // 加载插件
     load_modules();
 
     status::writeToFile();

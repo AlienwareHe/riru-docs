@@ -42,6 +42,7 @@ static void nativeForkAndSpecialize_pre(
         jstring &instructionSet, jstring &appDataDir, jboolean &isTopApp, jobjectArray &pkgDataInfoList,
         jobjectArray &whitelistedDataInfoList, jboolean &bindMountAppDataDirs, jboolean &bindMountAppStorageDirs) {
 
+    // 遍历执行每个模块的forkAndSpecializePre方法，这里可以知道，只需要在模块中声明forkAndSpecializePre方法，即可在com.android.internal.os.Zygote#forkAndSpecialize方法执行前被调用
     for (auto module : *get_modules()) {
         if (!module->hasForkAndSpecializePre())
             continue;
@@ -260,6 +261,7 @@ jint nativeForkAndSpecialize_r(
         jstring instructionSet, jstring appDataDir, jboolean isTopApp, jobjectArray pkgDataInfoList,
         jobjectArray whitelistedDataInfoList, jboolean bindMountAppDataDirs, jboolean bindMountAppStorageDirs) {
 
+    // 通过nativeForkAndSpecialize_pre和nativeForkAndSpecialize_post完成了nativeForkAndSpecialize方法的AOP
     nativeForkAndSpecialize_pre(env, clazz, uid, gid, gids, runtime_flags, rlimits, mount_external,
                                 se_info, se_name, fdsToClose, fdsToIgnore, is_child_zygote,
                                 instructionSet, appDataDir, isTopApp, pkgDataInfoList, whitelistedDataInfoList,
