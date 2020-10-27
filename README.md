@@ -1,56 +1,53 @@
+# https://github.com/RikkaApps/Riru
+
 # Riru
+Riru只做一件事，注入Zygote进程，以允许模块在app或system server中运行其代码。
 
-Riru only does one thing, inject into zygote in order to allow modules run their codes in apps or the system server.
+## 环境需要
 
-> The name, Riru, comes from a character. (https://www.pixiv.net/member_illust.php?mode=medium&illust_id=74128856)
+安装[Magisk](https://github.com/topjohnwu/Magisk)的安卓7.0+的设备
 
-## Requirements
+## 介绍
 
-Android 7.0+ devices rooted with [Magisk](https://github.com/topjohnwu/Magisk)
+### 安装
 
-## Guide
+* 一键式
 
-### Install
+  1. 在Magisk Manager中搜索 「riru」
+  2. 安装「riru」
 
-* Automatically
+* 手动
 
-  1. Search "Riru" in Magisk Manager
-  2. Install the module named "Riru"
+  1. 下载压缩包[GitHub release](https://github.com/RikkaApps/Riru/releases)
+  2. 在Magisk Manager中安装(Modules - Install from storage - Select downloaded zip)
 
-* Manually
-
-  1. Download the zip from [GitHub release](https://github.com/RikkaApps/Riru/releases)
-  2. Install in Magisk Manager (Modules - Install from storage - Select downloaded zip)
-
-### Config
+### 配置
 
 * When the file `/data/adb/riru/disable` exists, Riru will do nothing
 * When the file `/data/adb/riru/enable_hide` exists, the hide mechanism will be enabled (also requires the support of the modules)
 
-## How Riru works?
+## Riru原理
 
-* How to inject into zygote process?
+* 如何注入Zygote进程
 
-  Before v22.0, we use the method of replacing a system library (libmemtrack) that will be loaded by zygote. However, it seems to cause some weird problems. Maybe because libmemtrack is used by something else.
+  v22.0之前，通过替换会被zygote进程加载的系统动态库libmemtrack.so来完成Zygote注入，因为libmemtrack.so只有十几个导出函数，非常轻量便于修改，但是这种方式可能导致某些奇怪的问题因为libmemtrack.so可能被用作其他用途
 
-  Then we found a super easy way, add our so file into `/system/etc/public.libraries.txt`. All so files in `public.libraries.txt` will be automatically "dlopen-ed" by the system. This way is from [here](https://blog.canyie.top/2020/02/03/a-new-xposed-style-framework/).
+  v22.0之后，通过一个更简单的方式，在`/system/etc/public.libraries.txt`文件中追加我们的so路径，该文件中的所有动态库文件都会被系统自动dlopen，这种方式可见[here](https://blog.canyie.top/2020/02/03/a-new-xposed-style-framework/)
 
-* How to know if we are in an app process or a system server process?
 
-  Some JNI functions (`com.android.internal.os.Zygote#nativeForkAndSpecialize` & `com.android.internal.os.Zygote#nativeForkSystemServer`) is to fork the app process or the system server process.
-  So we need to replace these functions to ours. This part is simple, hook `jniRegisterNativeMethods` since all Java native methods in `libandroid_runtime.so` is registered through this function.
-  Then we can call the original `jniRegisterNativeMethods` again to replace them.
-  
-## How hide Hide works?
+* 如何区分当前运行在app进程还是system server进程?
 
-From v22.0, Riru provide a hide mechanism (idea from [Haruue Icymoon](https://github.com/haruue)), make the memory of Riru and module to anonymous memory to hide from "`/proc/maps` string scanning".
+  有写JNI方法例如com.android.internal.os.Zygote#nativeForkAndSpecialize和com.android.internal.os.Zygote#nativeForkSystemServer是app进程或者system server进程fork时会调用的方法，所以我们可以通过把这些方法替换咱们自己的方法来进行区分。
+  替换的方式也很简单，因为libandroid_runtime.so里的所有jni方法都会通过jniRegisterNativeMethods进行注册，所以我们可以通过GOT表hook这个方法，然后替换其中参数jniMethods，然后手动调用一次注册方法来完成替换。
 
-## Build
+## 如何隐藏Riru
 
-> Android Studio (at least 4.2 Canary 13) can't correctly handle local module using prefab, you may have to manually run ":riru:assembleDebug" to make Android Studio happy
+v22.0之后，Riru提供一种通过匿名内存来隐藏/proc/maps痕迹的方式，灵感来源于[Haruue Icymoon](https://github.com/haruue)。
+
+## 构建
 
 Run gradle task `:riru:assembleRelease` `:core:assembleRelease` task from Android Studio or the terminal, zip will be saved to `out`.
 
-## Create your own module
+## 创建Riru插件
 
 [Template](https://github.com/RikkaApps/Riru-ModuleTemplate)
