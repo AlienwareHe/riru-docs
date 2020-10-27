@@ -1,5 +1,7 @@
 # https://github.com/RikkaApps/Riru
 
+# [Riru原理浅析](/riru模块解析.md)
+
 # Riru
 Riru只做一件事，注入Zygote进程，以允许模块在app或system server中运行其代码。
 
