@@ -1,0 +1,3 @@
+Usage: prefab [OPTIONS] [PACKAGE_PATH]...
+
+Error: Invalid value for "PACKAGE_PATH": Directory "/Users/alienhe/code/public/Riru/module/build/intermediates/prefab_package/debug/prefab" is not readable.

@@ -1,0 +1,20 @@
+Executable : null
+arguments : 
+--build-system
+cmake
+--platform
+android
+--abi
+x86
+--os-version
+23
+--stl
+c++_static
+--ndk-version
+21
+--output
+/Users/alienhe/code/public/Riru/core/.cxx/cmake/debug/prefab/x86/prefab
+/Users/alienhe/.gradle/caches/transforms-2/files-2.1/f74ef1e89c83db20c6384f82dd9f28f5/jetified-xhook-1.2.0/prefab
+/Users/alienhe/code/public/Riru/module/build/intermediates/prefab_package/debug/prefab
+jvmArgs : 
+

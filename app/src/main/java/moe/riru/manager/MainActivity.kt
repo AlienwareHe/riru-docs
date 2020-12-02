@@ -2,6 +2,7 @@ package moe.riru.manager
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.SystemProperties
 import android.util.Log
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
@@ -27,19 +28,10 @@ class MainActivity : AppActivity() {
 
         // --------------------------------------------
 
-        val publicLibsFile = SuFile.open("/system/etc/public.libraries.txt")
-        val publicLibs = publicLibsFile.readTextOrNull()?.split('\n')?.toList()
-        if (publicLibs?.contains("libriru.so") != true) {
-            message.append("No libriru.so found in $publicLibsFile.\nCheck if there is other Magisk modules that modify $publicLibsFile.")
-            return
-        }
-
-        // --------------------------------------------
-
         val devRandomFile = SuFile.open("/data/adb/riru/dev_random")
         val devRandom = devRandomFile.readTextOrNull()
         if (devRandom == null) {
-            message.append("Riru not installed (or version < v22).")
+            message.append("Riru not installed (or version < v22).\n\n")
             detail.append("$devRandomFile not exist")
             return
         }
@@ -52,6 +44,13 @@ class MainActivity : AppActivity() {
         if (!devRootFile.exists()) {
             message.append("Riru not installed or not enabled.")
             detail.append("$devRootFile not exist")
+
+            if (SystemProperties.get("ro.dalvik.vm.native.bridge") != "libriruloader.so") {
+                message.appendLine("\n\nProperty \"ro.dalvik.vm.native.bridge\" is not \"libriruloader.so\".")
+                message.appendLine("\nMake sure you are not using other module which changes this property.")
+                message.appendLine("\nA typical example is, some \"optimize\" modules changes this property. Since changing this property is meaningless for \"optimization\", their quality is very questionable. In fact, changing properties for optimization is a joke.")
+                detail.append("\nro.dalvik.vm.native.bridge=${SystemProperties.get("ro.dalvik.vm.native.bridge")}")
+            }
             return
         }
         val apiFile = SuFile.open("/dev/riru_$devRandom/api")

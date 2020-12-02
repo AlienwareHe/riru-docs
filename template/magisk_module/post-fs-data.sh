@@ -2,26 +2,23 @@
 MODDIR=${0%/*}
 RIRU_PATH="/data/adb/riru"
 
-# rename .new files
-move_new_file() {
-  if [ -f "$1.new" ]; then
-    rm "$1"
-    mv "$1.new" "$1"
-  fi
-}
+# Use magisk_file like other Magisk files
+mkdir $RIRU_PATH
+chcon -R u:object_r:magisk_file:s0 $RIRU_PATH
 
-move_new_file "$RIRU_PATH/api_version"
+# Rename .new file
+if [ -f "$RIRU_PATH/api_version.new" ]; then
+  rm "$RIRU_PATH/api_version"
+  mv "$RIRU_PATH/api_version.new" "$RIRU_PATH/api_version"
+fi
 
-# Reset context
-chcon -R u:object_r:magisk_file:s0 "/data/adb/riru"
+# Remove old files to avoid downgrade problems
+rm /data/misc/riru/api_version
+rm /data/misc/riru/version_code
+rm /data/misc/riru/version_name
 
-# Restart zygote if needed
-#ZYGOTE_RESTART=$RIRU_PATH/bin/zygote_restart
-#[ ! -f "$RIRU_PATH/config/disable_auto_restart" ] && $ZYGOTE_RESTART
+# Backup ro.dalvik.vm.native.bridge
+echo -n "$(getprop ro.dalvik.vm.native.bridge)" > $RIRU_PATH/native_bridge
 
-# generate public.libraries.txt
-# idea from https://blog.canyie.top/2020/02/03/a-new-xposed-style-framework/
-LIBRARIES_FILE='/system/etc/public.libraries.txt'
-mkdir -p "$MODDIR/system/etc"
-cp -f $LIBRARIES_FILE "$MODDIR/$LIBRARIES_FILE"
-grep -qxF 'libriru.so' "$MODDIR/$LIBRARIES_FILE" || echo 'libriru.so' >> "$MODDIR/$LIBRARIES_FILE"
+# Start daemon which runs socket "rirud"
+exec $RIRU_PATH/bin/rirud
